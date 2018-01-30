@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<% include ../partials/header.ejs %>
+</head>
+<body>
+	<div id="app">
+
+
+		<!-- Top Page -->
+		<div class="layer layer1 active">
+			<div id="pick-map"></div>
+			<div id="pick-detail" style="text-align:center;"></div>
+			<div class="app-menu">
+				<span v-if="user.balance != '---'" class="show-balance">
+					<span style="padding: 0 0.25rem;"><img style="height: 1.4rem;" src="/img/nem.png"/></span>
+					<span style="font-size: 1.75rem;">{{user.balance}}</span> XEM
+				</span>
+				<button v-on:click="openWallet" class="btn-hamburger">
+					<span class="left"></span>
+					<span class="right"><i class="fa fa-bars"></i></span>
+				</button>
+			</div>
+			<div class="app-menu location">
+				<button v-on:click="changeLocationFollow" class="btn-hamburger location">
+					<span class="left"></span>
+					<span class="right">
+						<i class="fa fa-location-arrow" v-if="!location.followMode"></i><i class="fa fa-globe" v-if="location.followMode"></i>
+					</span>
+				</button>
+			</div>
+			<div class="campaign-detail">
+				<div v-if="!campaignDetail.show" class="campaign-detail-loading">
+					<i class="fa fa-spinner fa-pulse fa-2x fa-fw"></i>
+				</div>
+				<div v-if="campaignDetail.show" class="contents">
+					<div class="location-box">
+						<div class="name">{{campaignDetail.locationName}}</div>
+						<div class="distance"><i class="fa fa-location-arrow" aria-hidden="true"></i> {{campaignDetail.distance}} m</div>
+					</div>
+					<div class="chat">
+						<div class="profile">
+							<img v-bind:src="campaignDetail.putBy.photoUrl"/>
+						</div>
+						<div class="main">
+							<div class="username">
+								{{campaignDetail.putBy.userName}}
+							</div>
+							<div class="balloon message" v-if="campaignDetail.message && campaignDetail.message.length > 0">
+								{{campaignDetail.message}}		
+							</div>				
+							<div class="balloon">
+								Put {{(campaignDetail.amount - 0.05) | fixAmount}} XEM <img v-bind:src="'/img/coin_' + campaignDetail.type + '.png'"/>
+							</div>				
+							<div class="created">
+								{{campaignDetail.created | normalizeDate}}
+							</div>
+						</div>
+					</div>
+					<div class="btn-btm-box">
+						<button class="btn btn-block btn-wave" v-on:click="pickCoin">
+							<span class="btn-icon icon-coin"><img v-bind:src="'/img/coin_' + campaignDetail.type + '.png'" style="height: 1rem"/></span>
+							Dive for {{(campaignDetail.amount - 0.05) | fixAmount}} XEM
+						</button>
+					</div>		
+				</div>
+			</div>
+		</div>
+		<!-- Top Page -->
+
+
+		<!-- Account Page -->
+		<div class="layer layer2">
+			<div class="header" v-on:click="closeWallet">
+				<button v-on:click="closeWallet"><i class="fa fa-chevron-left" aria-hidden="true"></i></button>
+				<a href="/logout" class="btn-logout"><i class="fa fa-sign-out" aria-hidden="true"></i> Sign out</a>
+			</div>
+			<div class="contents">
+				<div class="profile">
+					<ul>
+						<li>
+							<button class="btn btn-icon-white" v-on:click="openEditProfile"><i class="fa fa-cog fa-fw" aria-hidden="true"></i></button>
+						</li>
+						<li>
+							<img class="profile-img" v-bind:src="user.userPhotoUrl"/>
+						</li>
+						<li>
+							<button class="btn btn-icon-white" v-on:click="refreshAccount">
+								<i v-if="!(app.loading || app.processing)" class="fa fa-refresh fa-fw" aria-hidden="true"></i>
+								<i v-if="app.loading || app.processing" class="fa fa-refresh fa-spin fa-fw" aria-hidden="true"></i>
+							</button>
+						</li>
+					</ul>
+					<p>{{user.userName}}</p>
+				</div>
+				<div class="box">
+					<h3 class="title">
+						Balance
+					</h3>
+					<p>
+						<span id="o_balance" style="font-size: 2.5rem;">{{user.balance}}</span> XEM
+					</p>
+					<div>
+						<button class="btn btn-50p" v-on:click="openLayer3" data-target="deposit">Deposit</button>
+						<button class="btn btn-50p" v-on:click="openLayer3" data-target="withdraw">Withdraw</button>
+					</div>
+				</div>
+				<div class="box">
+					<h3 class="title">Dived NEM</h3>
+
+					<div class="acq-box" v-on:click="openLayer3" data-target="my-acquisition">
+						<div class="acq-item">
+							<span class="acq-item-icon">
+								<img src="/img/coin_1.png"/>
+							</span>
+							<span class="acq-item-number">{{incomingCoins[1]}}</span>
+						</div>
+						<div class="acq-item">
+							<span class="acq-item-icon">
+								<img src="/img/coin_2.png"/>
+							</span>
+							<span class="acq-item-number">{{incomingCoins[2]}}</span>
+						</div>
+						<div class="acq-item">
+							<span class="acq-item-icon">
+								<img src="/img/coin_3.png"/>
+							</span>
+							<span class="acq-item-number">{{incomingCoins[3]}}</span>
+						</div>
+						<div class="acq-item">
+							<span class="acq-item-icon">
+								<img src="/img/coin_4.png"/>
+							</span>
+							<span class="acq-item-number">{{incomingCoins[4]}}</span>
+						</div>
+					</div>
+				</div>
+
+				<div class="box">
+					<h3 class="title">My Campaigns</h3>
+					<button class="p-btn btn-transparent" v-on:click="openLayer3" data-target="my-campaign">
+						<span class="left">{{user.transactions.outgoing.length}}</span>
+						<span class="right"><i class="fa fa-chevron-right" aria-hidden="true"></i></span>
+					</button>
+					<button class="btn btn-block btn-wave" v-on:click="openLayer3" data-target="new-campaign-1">
+						<span class="btn-icon"><i class="fa fa-users" aria-hidden="true"></i></span>
+						Create New Campaign
+					</button>
+				</div>
+
+			</div>
+		</div>
+		<!-- Account Page -->
+
+
+		<!-- Deposit Page -->
+		<div class="layer layer3 deposit">
+			<div class="header">
+				<button v-on:click="returnToLayer2"><i class="fa fa-chevron-left" aria-hidden="true"></i></button>
+			</div>
+			<div class="contents" style="text-align:center">
+				<div class="contents-box">
+					<p style="padding: 2rem 0;color:rgba(255,255,255,.5);">Your wallet address</p>
+					<h2>{{user.fmtAddress}}</h2>
+					<img :src="'https://chart.apis.google.com/chart?chs=200x200&cht=qr&chl=' + user.fmtAddress"/>
+				</div>
+			</div>
+		</div>
+		<!-- Deposit Page -->
+
+
+		<!-- Withdraw Page -->
+		<div class="layer layer3 withdraw">
+			<div class="header">
+				<button v-on:click="returnToLayer2"><i class="fa fa-chevron-left" aria-hidden="true"></i></button>
+			</div>
+			<div class="contents">
+				<div class="contents-box">
+					<h4>Address</h4>
+					<input v-model="withdraw.address" placeholder="Address"></input>
+					<h4>Amount</h4>
+					<input v-model.number="withdraw.amount" placeholder="Amount"></input>
+
+				</div>
+			</div>
+			<div class="bottom">
+				<button class="btn btn-block btn-wave" v-on:click="withdrawNem"><i class="fa fa-paper-plane fa-fw" aria-hidden="true"></i> Send</button>
+			</div>
+		</div>
+		<!-- Withdraw Page -->
+
+
+		<!-- My Campaign Page -->
+		<div class="layer layer3 my-campaign">
+			<div class="header">
+				<button v-on:click="returnToLayer2"><i class="fa fa-chevron-left" aria-hidden="true"></i></button>
+			</div>
+			<div id="mccw" class="contents-wrapper">
+				<div id="mccs" class="contents">
+					<ul class="campaign-list">
+						<li v-for="og in user.transactions.outgoing" v-if="og.transaction.campaign" v-on:click="openMyCampaignDetail" :data-target="og.transaction.campaign._id">
+							<div class="location-box">
+								<div class="name long">{{og.transaction.campaign.locationName}}</div>
+							</div>
+							<div class="chat">
+								<div class="profile">
+									<img v-bind:src="og.transaction.campaign.putBy.photoUrl"/>
+								</div>
+								<div class="main">
+									<div class="username">
+										{{og.transaction.campaign.putBy.userName}}
+									</div>
+									<div class="balloon message" v-if="og.transaction.campaign.message && og.transaction.campaign.message.length > 0">
+										{{og.transaction.campaign.message}}		
+									</div>				
+									<div class="balloon">
+										Total : Put {{og.transaction.campaign.sumAmount | fixAmount}} XEM 
+										<img v-bind:src="'/img/coin_' + og.transaction.campaign.type + '.png'"/>
+									</div>				
+									<div class="created">
+										{{og.transaction.campaign.created | normalizeDate}}
+									</div>
+								</div>
+							</div>
+						</li>
+					</ul>
+				</div>
+			</div>
+		</div>
+		<!-- My Campaign Page -->
+
+
+		<!-- Dived NEM Page -->
+		<div class="layer layer3 my-acquisition">
+			<div class="header">
+				<button v-on:click="returnToLayer2"><i class="fa fa-chevron-left" aria-hidden="true"></i></button>
+			</div>
+			<div id="macw" class="contents-wrapper">
+				<div id="macs" class="contents">
+					<ul class="campaign-list">
+						<li v-for="ic in user.transactions.incoming" v-if="ic.transaction.campaign">
+							<div class="location-box">
+								<div class="name long">{{ic.transaction.campaign.locationName}}</div>
+							</div>
+							<div class="chat">
+								<div class="profile">
+									<img v-bind:src="ic.transaction.campaign.putBy.photoUrl"/>
+								</div>
+								<div class="main">
+									<div class="username">
+										{{ic.transaction.campaign.putBy.userName}}
+									</div>
+									<div class="balloon message" v-if="ic.transaction.campaign.message && ic.transaction.campaign.message.length > 0">
+										{{ic.transaction.campaign.message}}		
+									</div>				
+									<div class="balloon">
+										Put {{ic.transaction.amount | fixAmountOfNem}} XEM 
+										<img v-bind:src="'/img/coin_' + ic.transaction.campaign.type + '.png'"/>
+									</div>
+									<div class="created">
+										{{ic.transaction.campaign.created | normalizeDate}}
+									</div>
+								</div>
+							</div>
+							<div class="chat mine">
+								<div class="main">
+									<div class="balloon">
+										Dived for {{ic.transaction.amount | fixAmountOfNem}} XEM 
+										<img v-bind:src="'/img/coin_' + ic.transaction.campaign.type + '.png'"/>
+									</div>				
+									<div class="created">
+										{{ic.transaction.timeStamp | normalizeDateOfNem}}
+									</div>
+								</div>
+							</div>
+						</li>
+					</ul>
+				</div>
+			</div>
+		</div>
+		<!-- Dived NEM Page -->
+
+
+		<!-- My Campaign Detail Page -->
+		<div class="layer layer3 my-campaign-detail">
+			<div class="header">
+				<button v-on:click="openLayer3" data-target="my-campaign"><i class="fa fa-chevron-left" aria-hidden="true"></i></button>
+			</div>
+			<div class="center-block" v-if="app.loading" style="color: rgba(255,255,255,.6)">
+				<i class="fa fa-spinner fa-pulse fa-2x fa-fw"></i>
+			</div>
+			<div id="mcdcw" class="contents-wrapper">
+
+				<div id="mcdcs" class="contents" v-if="!app.loading && myCampaignDetail.campaign.putBy">
+					<div style="padding:1rem;font-size:.85rem;">
+						<div class="location-box">
+							<div class="name long">{{myCampaignDetail.campaign.locationName}}</div>
+						</div>
+						<div class="chat">
+							<div class="profile">
+								<img v-bind:src="myCampaignDetail.campaign.putBy.photoUrl"/>
+							</div>
+							<div class="main">
+								<div class="username">
+									{{myCampaignDetail.campaign.putBy.userName}}
+								</div>
+								<div class="balloon message" v-if="myCampaignDetail.campaign.message && myCampaignDetail.campaign.message.length > 0">
+									{{myCampaignDetail.campaign.message}}		
+								</div>				
+								<div class="balloon">
+									Total: Put {{myCampaignDetail.campaign.sumAmount  | fixAmount}} XEM <img v-bind:src="'/img/coin_' + myCampaignDetail.campaign.type + '.png'"/>
+								</div>
+								<div class="created">
+									{{myCampaignDetail.campaign.created | normalizeDate}}
+								</div>				
+							</div>
+						</div>
+					</div>
+					<div style="padding: 1rem;">
+						<h3 class="title">Generation</h3>
+						<div class="gene-bar-box">
+							<div class="gene-area" v-for="el in myCampaignDetailSummary.generation.detail">
+								<div class="gene-bar" :style="'height: ' + 70 * (el / myCampaignDetailSummary.generation.total) + '%;'">
+									<div class="gene-number">{{el}}</div>
+								</div>
+							</div>
+						</div>
+						<div class="gene-label-box">
+							<div class="gene-label">0-</div>
+							<div class="gene-label">10-</div>
+							<div class="gene-label">20-</div>
+							<div class="gene-label">30-</div>
+							<div class="gene-label">40-</div>
+							<div class="gene-label">50-</div>
+							<div class="gene-label">60-</div>
+							<div class="gene-label">70-</div>
+							<div class="gene-label">80-</div>
+							<div class="gene-label">90-</div>
+						</div>
+
+						<h3 class="title" style="margin: 2rem 0 1rem 0;">Gender</h3>
+						<div class="gendar-bar-box">
+							<div class="gender-label">Female</div>
+							<div class="gender-bar">
+								<div class="bar" :style="'width: ' + 70 * (myCampaignDetailSummary.gender.detail[0] / myCampaignDetailSummary.gender.total) + '%;'">
+									<div class="gender-number">{{myCampaignDetailSummary.gender.detail[0]}}</div>
+								</div>
+							</div>
+						</div>
+						<div class="gendar-bar-box">
+							<div class="gender-label">Male</div>
+							<div class="gender-bar">
+								<div class="bar" :style="'width: ' + 70 * (myCampaignDetailSummary.gender.detail[1] / myCampaignDetailSummary.gender.total) + '%;'">
+									<div class="gender-number">{{myCampaignDetailSummary.gender.detail[1]}}</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- My Campaign Detail Page -->
+
+
+		<!-- New Campaign 1 / 2 Page -->
+		<div class="layer layer3 new-campaign-1">
+			<div class="header">
+				<button v-on:click="returnToLayer2"><i class="fa fa-chevron-left" aria-hidden="true"></i></button>
+			</div>
+
+			<div id="put-map"></div>
+
+			<div class="app-menu" style="top:58px;">
+				<div class="app-box">
+					<span><i class="fa fa-search" aria-hidden="true"></i></span>
+					<input type="text" v-model="textSearch.word" style="border: none; width: calc(100% - 3rem);" debounce="500" v-on:focus="activateTextSearch" v-on:change="calcTotalCost"/>
+				</div>
+				<div v-if="textSearch.list.length > 0 && textSearch.active" class="app-box result-list">
+					<ul>
+						<li v-for="i in textSearch.list" :data-id="i.place_id" :data-lat="i.geometry.location.lat()" :data-lng="i.geometry.location.lng()" :data-name="i.name" v-on:click="clickedResultItem">
+							<span class="li-icon"><img :src="i.icon"></span>
+							<span class="right"><span class="li-name">{{i.name}}</span><span class="li-address">{{i.formatted_address}}</span></span>
+						</li>
+					</ul>
+				</div>
+			</div>
+			<div class="bottom">
+				<button v-if="newCampaign.placeName.length > 0" class="btn btn-block btn-wave btn-blue" v-on:click="openLayer3" data-target="new-campaign-2"><i class="fa fa-map-marker fa-fw" aria-hidden="true"></i> Use This Location</button>
+			</div>
+		</div>
+		<!-- New Campaign 1 / 2 Page -->
+
+
+		<!-- New Campaign 2 / 2 Page -->
+		<div class="layer layer3 new-campaign-2">
+			<div class="header">
+				<button v-on:click="openLayer3" data-target="new-campaign-1"><i class="fa fa-chevron-left" aria-hidden="true"></i></button>
+			</div>
+			<div class="contents">
+				<div class="contents-box form">
+					<h4>Place</h4>
+					<input v-model="newCampaign.placeName" placeholder="Place" disabled="disabled"></input>
+					<h4>Message</h4>
+					<input v-model="newCampaign.message" placeholder="Message"></input>
+					<h4>NEM</h4>
+					<span style="width:4rem;display: inline-block;font-size: 1.25rem;text-align: center;">
+						<img :src="'/img/coin_' + newCampaign.type + '.png'" style="height:2rem;"/>
+					</span>
+					<select v-model="newCampaign.type" v-on:change="calcTotalCost" style="width: calc(100% - 5rem);">
+						<option value="4">Bronze</option>
+						<option value="3">Silver</option>
+						<option value="2">Gold</option>
+						<option value="1">Platinum</option>				
+					</select>
+					<span style="width:4rem;display: inline-block;
+					font-size: 1.25rem;
+					text-align: center;"><i class="fa fa-times" aria-hidden="true"></i></span>
+					<select v-model="newCampaign.count" v-on:change="calcTotalCost" style="width: calc(100% - 5rem);">
+						<option value="1">1</option>
+						<option value="5">5</option>
+						<option value="10">10</option>
+						<option value="15">15</option>
+						<option value="20">20</option>
+						<option value="25">25</option>
+						<option value="30">30</option>
+						<option value="35">35</option>
+						<option value="40">40</option>
+						<option value="45">45</option>
+						<option value="50">50</option>
+						<option value="100">100</option>
+						<option value="150">150</option>
+						<option value="200">200</option>
+						<option value="500">500</option>
+						<option value="1000">1000</option>
+					</select>
+
+					<p style="text-align:center;margin-top: 4rem;">
+						Estimated Cost
+					</p>
+					<p style="text-align:center">
+						<span style="font-size:1.5rem">{{newCampaign.total}}</span> XEM
+					</p>
+				</div>
+			</div>
+			<div class="bottom">
+				<button class="btn btn-block btn-wave" v-on:click="putCoin"><i class="fa fa-check fa-fw" aria-hidden="true"></i> Complete</button>
+			</div>
+		</div>
+		<!-- New Campaign 2 / 2 Page -->
+
+
+		<!-- Edit Profile Page -->
+		<div v-bind:class="'layer layer4 bg-go profile ' + layer4show + ' location-' + location.active" >
+			<div class="header">
+				<button v-if="registerStatus" class="btn btn-close" v-on:click="closeEditProfile"><i class="fa fa-times" aria-hidden="true"></i></button>
+			</div>
+			<div class="contents-wrapper">
+				<div class="contents">
+					<div class="contents-box form">
+						<h4>User Name</h4>
+						<input v-model="user.userName" placeholder=""></input>
+						<h4>Birth Year</h4>
+						<select v-model="user.birthYear" style="width: calc(100% - 5rem);">
+							<option v-for="option in birthYearOptions" v-bind:value="option.value">
+								{{option.text}}
+							</option>
+						</select>
+						<h4>Gender</h4>
+						<select v-model="user.gender" style="width: calc(100% - 5rem);">
+							<option value=""> -- SELECT --</option>
+							<option value="female">Female</option>
+							<option value="male">Male</option>
+						</select>
+					</div>
+					<div class="btn-btm-box">
+						<button class="btn btn-block btn-wave" v-on:click="saveProfile">
+							<i v-if="app.loading" class="fa fa-spinner fa-pulse fa-fw"></i>
+							<i v-if="!app.loading" class="fa fa-pencil fa-fw" aria-hidden="true"></i>
+							Save
+						</button>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- Edit Profile Page -->
+
+
+		<!-- App Loading -->
+		<div id="loading" v-if="!location.active">
+			<div class="center-block">
+				<i class="fa fa-spinner fa-pulse fa-fw"></i> Location detecting ..
+			</div>
+		</div>
+		<!-- App Loading -->
+
+
+		<!-- App Transaction Processing -->
+		<div :class="'transaction-processing pr-' + app.processing">
+			<i class="fa fa-spinner fa-pulse fa-fw"></i> Processing ..
+		</div>
+		<!-- App Transaction Processing -->
+
+
+	</div>
+	<script src="/js/myscript.js"></script>
+</body>
+</html>
