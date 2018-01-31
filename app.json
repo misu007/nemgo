@@ -1,0 +1,57 @@
+{
+  "name": "NEMgo Prototype",
+  "description": "Prototype NEMgo Mobile app for the NEM Hackathon project",
+  "repository": "https://github.com/misu007/nemgo",
+  "logo": "https://github.com/misu007/nemgo/raw/master/public/img/nemgo.png",
+  "keywords": ["node", "express", "nem", "nemgo", "hackathon", "mongodb"],
+  "env": {
+        "APP_NAME" : {
+	    	"description": "NEMgo Prototype",
+	    	"value": "aes-256-ctr"
+		},
+		"FACEBOOK_APP_ID" : {
+	    	"description": "Facebook Login",
+	    	"required": "true"
+		},
+        "FACEBOOK_APP_SECRET" : {
+	    	"description": "Facebook Login",
+	    	"required": "true"
+		},
+        "FACEBOOK_APP_CALLBACK_URI" : {
+	    	"description": "Facebook Login",
+	    	"required": "true"
+		},
+        "TWITTER_APP_ID" : {
+	    	"description": "Twitter Login",
+	    	"required": "true"
+		},
+        "TWITTER_APP_SECRET" : {
+	    	"description": "Twitter Login",
+	    	"required": "true"
+		},
+        "TWITTER_APP_CALLBACK_URI" : {
+	    	"description": "Twitter Login",
+	    	"required": "true"
+		},
+        "GOOGLE_MAP_API_KEY" : {
+	    	"description": "Goole Map Javascript API with Place API",
+	    	"required": "true"	
+		},
+        "CRYPT_ALGORITHM" : {
+	    	"description": "",
+	    	"value": "aes-256-ctr"
+		},
+        "CRYPT_PASSPHRASE" : {
+	    	"description": "",
+	    	"generator": "secret"
+		},
+        "SESSION_SECRET" : {
+	    	"description": "",
+	    	"generator": "secret"
+		}        
+	},
+    "addons": [
+		"mongolab", "heroku-redis"
+    ],
+    "image": "heroku/nodejs"
+}
