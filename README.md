@@ -1,6 +1,6 @@
 # NEMgo Prototype
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/bQ0aXev0WFQ" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+[![NEMgo - Dive into Real World](https://img.youtube.com/vi/bQ0aXev0WFQ/0.jpg)](https://www.youtube.com/watch?v=bQ0aXev0WFQ)
 
 ## Easy to Deploy
 
